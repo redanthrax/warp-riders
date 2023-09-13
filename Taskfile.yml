@@ -1,0 +1,10 @@
+version: '3'
+
+tasks:
+  debug:
+    cmds:
+      - go build -o warp-riders.exe -ldflags '-linkmode external -extldflags "-static"' .
+      - ./warp-riders.exe
+  build:
+    cmds:
+      - go build -o warp-riders.exe -ldflags '-s -w -H=windowsgui -linkmode external -extldflags "-static"' .

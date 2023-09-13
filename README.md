@@ -1,8 +1,16 @@
 # Warp Riders
 
-Here be a placeholder for the Space Life RPG - Warp Riders
+Space Life RPG - Warp Riders
 
 ## Build
+
+Uses task to run build. https://taskfile.dev/
+
+### Debug
 ```
-go build -o warp-riders.exe -ldflags "-s -w -H=windowsgui"
+task debug
+```
+### Production
+```
+task build
 ```

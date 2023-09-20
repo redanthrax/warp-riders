@@ -1,36 +1,18 @@
 package main
 
 import (
+	"fmt"
 	"os"
 
 	rl "github.com/gen2brain/raylib-go/raylib"
 )
 
 const (
-	screenWidth  = 800
-	screenHeight = 600
-	spriteSize   = 32
+	screenWidth  = 1024
+	screenHeight = 768
+	spriteSize   = 30
+	gameTitle    = "Warp Riders"
 )
-
-type Player struct {
-	Position rl.Vector2
-	Sprite   rl.Texture2D
-	FrameRec rl.Rectangle
-}
-
-type Game struct {
-	GameOver bool
-	Dead     bool
-	Pause    bool
-
-	FramesCounter int32
-	FramesSpeed   int32
-	CurrentFrame  int32
-
-	WindowShouldClose bool
-
-	Player Player
-}
 
 func NewGame() (g Game) {
 	g.Init()
@@ -39,16 +21,13 @@ func NewGame() (g Game) {
 
 func main() {
 	game := NewGame()
-	game.GameOver = true
-
-	rl.InitWindow(screenWidth, screenHeight, "Warp Riders")
-
+	game.MainMenu = true
+	rl.InitWindow(screenWidth, screenHeight, gameTitle)
 	rl.InitAudioDevice()
-
 	game.Load()
-
-	rl.SetTargetFPS(60)
-
+	monitor := rl.GetCurrentMonitor()
+	refreshRate := rl.GetMonitorRefreshRate(monitor)
+	rl.SetTargetFPS(int32(refreshRate))
 	for !game.WindowShouldClose {
 		game.Update()
 		game.Draw()
@@ -61,23 +40,30 @@ func main() {
 }
 
 func (g *Game) Init() {
-	g.Player = Player{
-		Position: rl.NewVector2(0, 0),
-		FrameRec: rl.NewRectangle(0, 0, spriteSize, spriteSize),
-	}
-
+	g.Player = Player{}
+	g.MusicTracks = map[string]MusicTrack{}
+	g.Sounds = make(map[string]rl.Sound)
 	g.FramesCounter = 0
 	g.WindowShouldClose = false
-	g.GameOver = false
+	g.MainMenu = false
 	g.Pause = false
+	g.Menu = Menu{
+		Selected: 0,
+		Options:  []string{"New Game", "Exit"},
+	}
 }
 
 func (g *Game) Load() {
-	g.Player.Sprite = rl.LoadTexture("assets/character/walk/walk.png")
+	g.Player.Sprite = rl.LoadTexture("assets/characters/buddie0 sprite sheet x1.png")
+	LoadMusic(g)
+	LoadSounds(g)
+	LoadPlayer(g)
 }
 
 func (g *Game) Unload() {
 	rl.UnloadTexture(g.Player.Sprite)
+	rl.UnloadMusicStream(g.MusicTracks[g.CurrentTrack].music)
+	rl.CloseAudioDevice()
 }
 
 func (g *Game) Update() {
@@ -85,46 +71,52 @@ func (g *Game) Update() {
 		g.WindowShouldClose = true
 	}
 
-	if !g.GameOver {
-		if rl.IsKeyPressed(rl.KeyQ) {
-			g.WindowShouldClose = true
-		}
-
-		if rl.IsKeyDown(rl.KeyLeft) {
-			g.Player.Position.X--
-		}
-
-		if rl.IsKeyDown(rl.KeyRight) {
-			g.Player.Position.X++
-		}
-
+	UpdateMusic(g)
+	if !g.MainMenu {
 		if !g.Pause {
-			//g.FramesCounter++
-			//if g.FramesCounter >= 8 {
-			//	g.FramesCounter = 0
-			//	g.Player.FrameRec.X = spriteSize
-			//} else {
-			//	g.Player.FrameRec.X = 0
-			//}
+			PlayerControls(g)
+			g.FramesCounter++
+			if g.FramesCounter >= 72 {
+				g.FramesCounter = 0
+				g.Player.FrameRec.X = spriteSize
+			} else {
+				g.Player.FrameRec.X = 0
+			}
 		}
 	} else {
-		if rl.IsKeyPressed(rl.KeyEnter) {
-			g.Init()
-		}
+		g.CurrentTrack = "menu"
+		MenuOptions(g)
 	}
 }
 
 func (g *Game) Draw() {
 	rl.BeginDrawing()
 	rl.ClearBackground(rl.SkyBlue)
-
-	if !g.GameOver {
-		rl.DrawTextureRec(g.Player.Sprite, g.Player.FrameRec, g.Player.Position, rl.RayWhite)
-		rl.DrawText("LETS GO", 0, 0, 10, rl.Black)
+	rl.DrawText(fmt.Sprintf("Frames: %d", rl.GetFPS()), 0, 0, 10, rl.Black)
+	if !g.MainMenu {
+		DrawPlayer(g)
 	} else {
-		rl.DrawTextureRec(g.Player.Sprite, g.Player.FrameRec, g.Player.Position, rl.RayWhite)
-		rl.DrawText("Enter to start", 0, 0, 10, rl.Black)
+		g.DrawMenu()
 	}
 
 	rl.EndDrawing()
+}
+
+func (g *Game) DrawMenu() {
+	//draw title
+	titleWidth := rl.MeasureText(gameTitle, 30)
+	titlePosX := (rl.GetScreenWidth() / 2) - (int(titleWidth) / 2)
+	rl.DrawText(gameTitle, int32(titlePosX), 100, 30, rl.Black)
+
+	//draw options
+	for i := 0; i < len(g.Menu.Options); i++ {
+		optionText := g.Menu.Options[i]
+		if g.Menu.Selected == i {
+			optionText = fmt.Sprintf(">%s<", g.Menu.Options[i])
+		}
+
+		optWidth := rl.MeasureText(optionText, 20)
+		optPosX := (rl.GetScreenWidth() / 2) - (int(optWidth) / 2)
+		rl.DrawText(optionText, int32(optPosX), int32(150+(i*40)), 20, rl.Red)
+	}
 }

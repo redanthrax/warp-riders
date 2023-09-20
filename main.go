@@ -75,13 +75,7 @@ func (g *Game) Update() {
 	if !g.MainMenu {
 		if !g.Pause {
 			PlayerControls(g)
-			g.FramesCounter++
-			if g.FramesCounter >= 72 {
-				g.FramesCounter = 0
-				g.Player.FrameRec.X = spriteSize
-			} else {
-				g.Player.FrameRec.X = 0
-			}
+			AnimatePlayer(g)
 		}
 	} else {
 		g.CurrentTrack = "menu"

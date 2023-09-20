@@ -27,12 +27,6 @@ type MusicTrack struct {
 	maxVolume float64 `default:"0.5"`
 }
 
-type Player struct {
-	Position rl.Vector2
-	Sprite   rl.Texture2D
-	FrameRec rl.Rectangle
-}
-
 type Menu struct {
 	Selected int
 	Options  []string

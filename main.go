@@ -10,7 +10,7 @@ import (
 const (
 	screenWidth  = 1024
 	screenHeight = 768
-	spriteSize   = 30
+	spriteSize   = 32
 	gameTitle    = "Warp Riders"
 )
 
@@ -27,6 +27,7 @@ func main() {
 	game.Load()
 	monitor := rl.GetCurrentMonitor()
 	refreshRate := rl.GetMonitorRefreshRate(monitor)
+	game.FramesSpeed = int32(refreshRate)
 	rl.SetTargetFPS(int32(refreshRate))
 	for !game.WindowShouldClose {
 		game.Update()
@@ -49,7 +50,7 @@ func (g *Game) Init() {
 	g.Pause = false
 	g.Menu = Menu{
 		Selected: 0,
-		Options:  []string{"New Game", "Exit"},
+		Options:  []string{"New Game", "Settings", "Exit"},
 	}
 }
 
